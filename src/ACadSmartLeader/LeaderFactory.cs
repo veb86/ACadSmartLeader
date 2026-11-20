@@ -44,7 +44,8 @@ internal static class LeaderFactory
             mtext.TextHeight = leader.TextHeight; mtext.TextStyleId = leader.TextStyleId;
             leader.MText = mtext; leader.TextLocation = landing;
             SetAttachment(leader, text);
-            var line = leader.AddLeaderLine(arrow); leader.AddLastVertex(line, landing);
+            // AutoCAD connects this arrow to the landing of the positioned MText.
+            leader.AddLeaderLine(arrow);
             var space = (BlockTableRecord)tr.GetObject(owner, OpenMode.ForWrite);
             space.AppendEntity(leader); tr.AddNewlyCreatedDBObject(leader, true);
             leader.SetFromStyle(); // Explicitly inherit the style's annotative status.

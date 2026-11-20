@@ -1,0 +1,21 @@
+_.UCS
+_World
+SL_DEMO
+(sl-test-geometry (entlast) '(10.0 -25.0 0.0) 1 "SL_DEMO")
+_.ZOOM
+_Extents
+; The three SL_GEOMETRY results are available in the command history.
+SL_CREATE
+_non
+20,-25,0
+_non
+65,15,0
+(sl-test-geometry (entlast) '(20.0 -25.0 0.0) 1 "SL_CREATE")
+SL_CREATE_GROUP
+_non
+30,-25,0
+_non
+-30,-10,0
+(sl-test-geometry (entlast) '(30.0 -25.0 0.0) -1 "SL_CREATE_GROUP")
+_.ZOOM
+_Extents

@@ -10,7 +10,9 @@ var references = assembly.GetReferencedAssemblies();
 // SDK filenames and metadata identities use different casing (AcMgd/acmgd).
 var acadNames = new HashSet<string>(new[] { "AcMgd", "AcDbMgd", "AcCoreMgd" }, StringComparer.OrdinalIgnoreCase);
 var acadReferences = references.Where(a => acadNames.Contains(a.Name!)).ToArray();
-if (acadReferences.Length != 3 || acadReferences.Any(a => a.Version!.Major != api.Major || a.Version.Minor != api.Minor))
+var referencedAcadNames = new HashSet<string>(acadReferences.Select(a => a.Name!), StringComparer.OrdinalIgnoreCase);
+if (!referencedAcadNames.IsSupersetOf(new[] { "AcDbMgd", "AcCoreMgd" }) ||
+    acadReferences.Any(a => a.Version!.Major != api.Major || a.Version.Minor != api.Minor))
     throw new InvalidOperationException("Expected AutoCAD API " + api + "; assembly references: " + string.Join(", ", references.Select(a => a.FullName)));
 var resources = assembly.GetManifestResourceNames();
 if (!resources.Any(n => n.StartsWith("Embedded.NCalc", StringComparison.Ordinal)) ||

@@ -234,7 +234,8 @@ internal sealed class LandingJig : EntityJig
     }
     protected override bool Update()
     {
-        var leader = (MLeader)Entity; leader.TextLocation = location;
-        leader.SetLastVertex(LeaderUpdater.Lines(leader)[0], location); return true;
+        var leader = (MLeader)Entity;
+        leader.MoveMLeader(location - leader.TextLocation, MoveType.MoveContentAndDoglegPoints);
+        return true;
     }
 }
