@@ -42,6 +42,12 @@ class PackageTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             check_manifest(self.manifest, "0.0.0")
 
+    def test_legacy_menu_component_is_rejected(self):
+        component = self.manifest.find("Components")
+        ET.SubElement(component, "ComponentEntry", ModuleName="./Contents/AutoCAD2020/ACadSmartLeader.cuix")
+        with self.assertRaisesRegex(AssertionError, "expected only the plugin DLL"):
+            check_manifest(self.manifest, project_version())
+
     def test_missing_payload_and_unsafe_paths_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "incomplete.zip"

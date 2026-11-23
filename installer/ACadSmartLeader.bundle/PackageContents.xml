@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ApplicationPackage SchemaVersion="1.0" AutodeskProduct="AutoCAD" ProductType="Application" Name="ACadSmartLeader" AppVersion="0.1.3" ProductCode="{FDCDDE9D-D11F-4E5D-BD99-5FB161C212D6}" UpgradeCode="{B135F3B5-693A-4FC9-9414-443ED38DC223}" Description="Умные выноски BobrovXDATA" Author="veb86">
+<ApplicationPackage SchemaVersion="1.0" AutodeskProduct="AutoCAD" ProductType="Application" Name="ACadSmartLeader" AppVersion="0.1.4" ProductCode="{33D1F641-D865-4BB0-B7EF-28484FD4CCC8}" UpgradeCode="{B135F3B5-693A-4FC9-9414-443ED38DC223}" Description="Умные выноски BobrovXDATA" Author="veb86">
   <CompanyDetails Name="veb86" Url="https://github.com/veb86/ACadSmartLeader" />
   <Components>
     <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R23.1" SeriesMax="R23.1" />
@@ -12,7 +12,6 @@
         <Command Global="SL_SETTINGS" Local="SL_SETTINGS" /><Command Global="SL_SELECT_PROBLEMS" Local="SL_SELECT_PROBLEMS" />
       </Commands>
     </ComponentEntry>
-    <ComponentEntry AppName="ACadSmartLeaderMenu" ModuleName="./Contents/AutoCAD2020/ACadSmartLeader.cuix" />
   </Components>
   <Components>
     <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R24.0" SeriesMax="R24.3" />
@@ -25,7 +24,6 @@
         <Command Global="SL_SETTINGS" Local="SL_SETTINGS" /><Command Global="SL_SELECT_PROBLEMS" Local="SL_SELECT_PROBLEMS" />
       </Commands>
     </ComponentEntry>
-    <ComponentEntry AppName="ACadSmartLeaderMenu" ModuleName="./Contents/AutoCAD2021-2024/ACadSmartLeader.cuix" />
   </Components>
   <Components>
     <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R25.0" />
@@ -38,6 +36,5 @@
         <Command Global="SL_SETTINGS" Local="SL_SETTINGS" /><Command Global="SL_SELECT_PROBLEMS" Local="SL_SELECT_PROBLEMS" />
       </Commands>
     </ComponentEntry>
-    <ComponentEntry AppName="ACadSmartLeaderMenu" ModuleName="./Contents/AutoCAD2025/ACadSmartLeader.cuix" />
   </Components>
 </ApplicationPackage>

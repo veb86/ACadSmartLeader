@@ -1,5 +1,7 @@
 # Issue 5: release plan and verification
 
+This plan records the 0.1.1 release. For current packaging and upgrade instructions, see [INSTALL.md](../installer/INSTALL.md).
+
 Objective: provide a GitHub release archive that can be installed without an
 installer or administrator rights into
 `%APPDATA%\Autodesk\ApplicationPlugins\ACadSmartLeader.bundle`, with automatic

@@ -1,5 +1,7 @@
 # Issue 3 implementation and verification plan
 
+This plan records PR #4. For current command-line operation and the design of a future menu, see the [AutoCAD menu specification](TZ-autocad-menu.md).
+
 Objective: implement the C# smart leader described in `TZ-smart-leader.md` in PR #4.
 Branch: `issue-3-7181973aa3f2`. No required sub-issues or additional feedback were present at initial review.
 

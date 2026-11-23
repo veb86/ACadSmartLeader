@@ -17,8 +17,6 @@ $inputs += $targets | ForEach-Object { 'src/ACadSmartLeader/bin/Release/' + $_[0
 foreach ($inputFile in $inputs) {
     if (-not (Test-Path -LiteralPath (Join-Path $root $inputFile) -PathType Leaf)) { throw "Missing release input: $inputFile" }
 }
-$menu = Join-Path $Output 'ACadSmartLeader.cuix'
-if (-not (Test-Path -LiteralPath $menu -PathType Leaf)) { throw "Missing menu: $menu. Run experiments/MenuBuilder first." }
 
 New-Item -ItemType Directory -Force $Output | Out-Null
 $staging = Join-Path $Output ('manual-install-' + [Guid]::NewGuid().ToString('N'))
@@ -33,7 +31,7 @@ try {
         $destination = Join-Path $bundle ('Contents/' + $target[1])
         New-Item -ItemType Directory -Force $destination | Out-Null
         Copy-Item -LiteralPath (Join-Path $root ('src/ACadSmartLeader/bin/Release/' + $target[0] + '/ACadSmartLeader.dll')) -Destination $destination
-        Copy-Item -LiteralPath (Join-Path $root 'examples/label-rules.json'), (Join-Path $root 'examples/demo-schema.json'), $menu -Destination $destination
+        Copy-Item -LiteralPath (Join-Path $root 'examples/label-rules.json'), (Join-Path $root 'examples/demo-schema.json') -Destination $destination
     }
     Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $archive -Force
     $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()

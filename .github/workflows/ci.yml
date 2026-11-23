@@ -56,7 +56,6 @@ jobs:
       - run: experiments/AssemblySmoke/bin/Release/net48/AssemblySmoke.exe src/ACadSmartLeader/bin/Release/net47/ACadSmartLeader.dll examples/demo-schema.json examples/label-rules.json 23.1
       - run: experiments/AssemblySmoke/bin/Release/net48/AssemblySmoke.exe src/ACadSmartLeader/bin/Release/net48/ACadSmartLeader.dll examples/demo-schema.json examples/label-rules.json 24.0
       - run: dotnet experiments/AssemblySmoke/bin/Release/net8.0/AssemblySmoke.dll src/ACadSmartLeader/bin/Release/net8.0-windows/ACadSmartLeader.dll examples/demo-schema.json examples/label-rules.json 25.0
-      - run: dotnet run --project experiments/MenuBuilder -c Release -- artifacts/ACadSmartLeader.cuix
       - run: dotnet run --project experiments/WpfRender -c Release -- artifacts/screenshots
       - shell: pwsh
         run: ./build/package.ps1
@@ -69,6 +68,7 @@ jobs:
           # Old staging content must never become part of the new archive.
           New-Item -ItemType Directory -Force artifacts/ACadSmartLeader.bundle | Out-Null
           Set-Content artifacts/ACadSmartLeader.bundle/stale.dll 'stale build'
+          Set-Content artifacts/ACadSmartLeader.cuix 'legacy build'
           ./build/package.ps1
           python experiments/PackageCheck/check.py "artifacts/ACadSmartLeader-manual-install-v$env:VERSION.zip"
           if ($LASTEXITCODE -ne 0) { throw 'Repeated packaging failed validation' }

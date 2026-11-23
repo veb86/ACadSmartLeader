@@ -1,5 +1,4 @@
 """Validate the distributable without executing AutoCAD reference assemblies."""
-import io
 import argparse
 import json
 from pathlib import Path, PurePosixPath
@@ -35,10 +34,9 @@ def check_manifest(manifest, version):
         assert runtime.attrib["Platform"] == "AutoCAD*"
         assert (runtime.get("SeriesMin"), runtime.get("SeriesMax")) == releases, target
         entries = component.findall("ComponentEntry")
-        assert len(entries) == 2, target
-        dll, menu = entries
-        prefix = "./Contents/" + target + "/ACadSmartLeader"
-        assert dll.attrib["ModuleName"] == prefix + ".dll"
+        assert len(entries) == 1, f"{target}: expected only the plugin DLL"
+        (dll,) = entries
+        assert dll.attrib["ModuleName"] == f"./Contents/{target}/ACadSmartLeader.dll"
         assert dll.attrib["AppType"] == ".Net"
         assert dll.attrib["LoadOnAutoCADStartup"].lower() == "true"
         assert dll.attrib["LoadOnCommandInvocation"].lower() == "true"
@@ -46,24 +44,6 @@ def check_manifest(manifest, version):
         assert len(commands) == len(COMMANDS)
         assert {c.attrib["Global"] for c in commands} == COMMANDS
         assert all(c.attrib["Local"] == c.attrib["Global"] for c in commands)
-        assert menu.attrib["ModuleName"] == prefix + ".cuix"
-
-
-def check_menu(data):
-    with zipfile.ZipFile(io.BytesIO(data)) as menu:
-        names = set(menu.namelist())
-        roots = {name: ET.fromstring(menu.read(name)) for name in names}
-        assert {"Header.cui", "MenuGroup.cui", "RibbonRoot.cui", "_rels/.rels", "[Content_Types].xml"} <= names
-        for relationship in roots["_rels/.rels"]:
-            assert relationship.attrib["Target"].lstrip("/") in names
-        macros = {m.attrib["UID"]: m.findtext("Macro/Command") for m in roots["MenuGroup.cui"].iter("MenuMacro")}
-        expected = ("SL_CREATE", "SL_CREATE_GROUP", "SL_UPDATE", "SL_RULES")
-        assert macros == {command + "_MACRO": f"$M=$(if,$(getvar,cmdactive),^C^C,)_{command} " for command in expected}
-        buttons = list(roots["RibbonRoot.cui"].iter("RibbonCommandButton"))
-        assert [button.attrib["MenuMacroID"] for button in buttons] == [command + "_MACRO" for command in expected]
-        assert buttons[1].attrib["Text"] == "Создать групповую"
-        panels = {p.attrib["UID"] for p in roots["RibbonRoot.cui"].iter("RibbonPanelSource")}
-        assert all(p.attrib["PanelId"] in panels for p in roots["RibbonRoot.cui"].iter("RibbonPanelSourceReference"))
 
 
 def check_package(path, version):
@@ -84,30 +64,24 @@ def check_package(path, version):
             name = root + entry.attrib["ModuleName"].removeprefix("./")
             assert name in names, name
             expected_files.add(name)
-            if name.endswith(".cuix"):
-                check_menu(package.read(name))
-            else:
-                assert package.read(name).startswith(b"MZ"), name
-                folder = str(PurePosixPath(name).parent) + "/"
-                for data in ("label-rules.json", "demo-schema.json"):
-                    expected_files.add(folder + data)
-                    json.loads(package.read(folder + data))
+            assert package.read(name).startswith(b"MZ"), name
+            folder = str(PurePosixPath(name).parent) + "/"
+            for data in ("label-rules.json", "demo-schema.json"):
+                expected_files.add(folder + data)
+                json.loads(package.read(folder + data))
         assert {n for n in names if not n.endswith("/")} == expected_files, "Unexpected or missing payload files"
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("package", nargs="?")
-    parser.add_argument("--cuix")
     parser.add_argument("--manifest")
     parser.add_argument("--version", default=project_version())
     args = parser.parse_args()
-    if args.cuix:
-        check_menu(Path(args.cuix).read_bytes())
-    elif args.manifest:
+    if args.manifest:
         check_manifest(ET.parse(args.manifest).getroot(), args.version)
     elif args.package:
         check_package(args.package, args.version)
     else:
-        parser.error("Supply an archive, --cuix or --manifest")
+        parser.error("Supply an archive or --manifest")
     print("PACKAGE_CHECK_OK")

@@ -8,13 +8,15 @@
 
 В каждом [выпуске](https://github.com/veb86/ACadSmartLeader/releases) публикуется `ACadSmartLeader-manual-install-v<версия>.zip` и `release-manifest.txt` с SHA256. Тот же ZIP доступен в артефакте workflow **Build and test** до выпуска. Установка **без инсталлятора и прав администратора**: закройте AutoCAD, разблокируйте скачанный ZIP в свойствах Windows, распакуйте его и скопируйте **всю папку `ACadSmartLeader.bundle`** в `%APPDATA%\Autodesk\ApplicationPlugins`. Перезапустите AutoCAD — пакет загружается автоматически; проверьте командой `SL_SETTINGS`.
 
-Все файлы установки находятся в `%APPDATA%\Autodesk\ApplicationPlugins\ACadSmartLeader.bundle`. Пакет содержит отдельные сборки для **AutoCAD 2020 x64** (API 23.1, .NET Framework 4.7), **2021–2024 x64** (API 24.0, .NET Framework 4.8) и сохранённую сборку **2025+** (.NET 8), меню CUIX, исходные правила и демонстрационную схему. AutoCAD выбирает одну подходящую сборку по `PackageContents.xml`. AutoCAD LT не поддерживается.
+Все файлы установки находятся в `%APPDATA%\Autodesk\ApplicationPlugins\ACadSmartLeader.bundle`. Пакет содержит отдельные сборки для **AutoCAD 2020 x64** (API 23.1, .NET Framework 4.7), **2021–2024 x64** (API 24.0, .NET Framework 4.8) и **2025+** (.NET 8), исходные правила и демонстрационную схему. AutoCAD выбирает одну подходящую сборку по `PackageContents.xml`. AutoCAD LT не поддерживается.
 
 [Полная инструкция](installer/INSTALL.md), также включённая в ZIP как `INSTALL.md`, описывает структуру папок, обновление, удаление, `TRUSTEDPATHS` и `APPAUTOLOAD`. При обновлении заменяйте bundle целиком после закрытия AutoCAD; для удаления достаточно удалить эту папку. Настройки хранятся отдельно в `%APPDATA%\ACadSmartLeader`.
 
-Альтернатива для разработки — `NETLOAD` соответствующей `ACadSmartLeader.dll`; JSON и CUIX должны лежать рядом. Зависимости NCalc 7.4.0 встроены в DLL, библиотеки AutoCAD поставляются самим AutoCAD. Палитра не обязательна для запуска выносок, но нужна для удобного редактирования данных цели.
+Альтернатива для разработки — `NETLOAD` соответствующей `ACadSmartLeader.dll` с файлами JSON в той же папке. Зависимости NCalc 7.4.0 встроены в DLL, библиотеки AutoCAD поставляются самим AutoCAD. Палитра не обязательна для запуска выносок, но нужна для удобного редактирования данных цели.
 
 ## Работа
+
+Вводите команды `SL_*` в командной строке AutoCAD. Для будущей интеграции есть отдельное [ТЗ на кнопки меню AutoCAD](docs/TZ-autocad-menu.md).
 
 1. У цели должны быть данные `BobrovXDATA` v2. Схема `VELEC` даёт подписи справочников, точность, формулы и значения по умолчанию.
 2. `SL_CREATE`: укажите точку стрелки с привязкой «Ближайшая», затем место полки с предпросмотром. Если под стрелкой нет цели, выберите её вручную. Ключ `_Rule` задаёт правило явно.
@@ -23,8 +25,8 @@
 
 | Команда | Назначение |
 | --- | --- |
-| `SL_CREATE` | Создать одну нативную MLeader с одной стрелкой |
-| `SL_CREATE_GROUP` | Создать отдельную MLeader по групповому правилу. На ленте «Умные выноски» доступна кнопка «Создать групповую» |
+| `SL_CREATE` | Создать нативную MLeader с одной стрелкой и прямым переходом к полке |
+| `SL_CREATE_GROUP` | Создать отдельную MLeader по групповому правилу |
 | `SL_UPDATE` | PickFirst либо `_All` / `_Select`; `_Force` разрешает замену ручного текста, затем выбирается область обновления |
 | `SL_EDIT` | Правило и собственные форматы одной выноски, вставка параметра, предпросмотр, перепривязка |
 | `SL_RULES` | Правила чертежа |
@@ -56,7 +58,7 @@
 
 ## Сборка и проверки
 
-Требуются Git, .NET SDK 8 и для рендера/пакета — Windows. Генератор CUIX работает и на Linux. Лицензия AutoCAD нужна для приёмки, для компиляции используются NuGet reference assemblies.
+Требуются Git, .NET SDK 8 и для рендера/пакета — Windows. Лицензия AutoCAD нужна для приёмки, для компиляции используются NuGet reference assemblies.
 
 ```sh
 git submodule update --init
@@ -67,12 +69,11 @@ dotnet build src/ACadSmartLeader -c Release -m:1
 На Windows из корня репозитория:
 
 ```powershell
-dotnet run --project experiments/MenuBuilder -c Release -- artifacts/ACadSmartLeader.cuix
 dotnet run --project experiments/WpfRender -c Release -- artifacts/screenshots
 ./build/package.ps1
 ```
 
-CI выполняет тесты Core, три сборки плагина, проверку версий API Autodesk и вычисление формул из каждой изолированной DLL, создание меню, проверку вставки параметров в обе полки редактора, рендер настоящих WPF-диалогов и упаковку. Проверяются диапазоны AutoCAD, команды автозагрузки, полный состав ZIP, повторная упаковка и SHA256. Лёгкая локальная проверка: `python -m unittest discover -s experiments/PackageCheck -p 'test_*.py'`. [План выпуска](docs/release-plan.md) и [матрица исходного ТЗ](docs/implementation-plan.md) связывают требования с проверками. При разработке на Linux с одним runtime .NET 10 тесты можно запускать с `DOTNET_ROLL_FORWARD=Major`; CI использует .NET 8.
+CI выполняет тесты Core, три сборки плагина, проверку версий API Autodesk и вычисление формул из каждой изолированной DLL, проверку вставки параметров в обе полки редактора, рендер WPF-диалогов и упаковку. Проверяются диапазоны AutoCAD, команды автозагрузки, полный состав ZIP, повторная упаковка и SHA256. Локально можно проверить упаковку командой `python -m unittest discover -s experiments/PackageCheck -p 'test_*.py'`. [План выпуска](docs/release-plan.md) и [матрица исходного ТЗ](docs/implementation-plan.md) связывают требования с проверками. При разработке на Linux с одним runtime .NET 10 тесты можно запускать с `DOTNET_ROLL_FORWARD=Major`. CI использует .NET 8.
 
 После успешных заданий Core и Windows workflow публикует выпуск автоматически при push в основную ветку с новой версией, при теге `v<версия>` либо при ручном запуске из основной ветки. Перед следующим выпуском согласованно измените `Version` в `Directory.Build.props` и `AppVersion` в `installer/ACadSmartLeader.bundle/PackageContents.xml`; для новой версии задайте новый `ProductCode`, сохраняя `UpgradeCode`. Тег должен совпадать с версией, иначе проверка завершится ошибкой. Готовый выпуск не перезаписывается. PR и push в рабочую ветку только проверяют пакет и сохраняют артефакт, без публикации релиза.
 
@@ -80,6 +81,7 @@ CI выполняет тесты Core, три сборки плагина, пр�
 
 - `SL_DEMO` в новом пустом чертеже создаёт схему, двигатель и кабель с данными и выносками. Сохраните как `examples/demo.dwg` после визуальной проверки. Команда отказывается менять уже заполненный чертёж.
 - `SL_DEMO_POWER`, `SL_DEMO_ASSERT`, `SL_DEMO_PERF` и [скрипт](experiments/AutoCadAcceptance/create-update-undo.scr) помогают воспроизвести приёмку, включая ограниченный пример на 1000 выносок.
+- [Проверка геометрии](docs/acceptance.md#геометрия-новых-выносок-issue-11) запускает создание обычной и групповой выносок в AutoCAD и проверяет сохранённые точки.
 - [`experiments/WpfRender`](experiments/WpfRender/Program.cs) рендерит те же классы диалогов без AutoCAD. Снимки не заменяют проверку в AutoCAD.
 - [`experiments/LabelFormatCheck`](experiments/LabelFormatCheck/Program.cs) — исходный эксперимент вычисления полок настоящим Core. [Результат](experiments/LabelFormatCheck/output.txt).
 - [`experiments/AcadApiProbe`](experiments/AcadApiProbe/Program.cs) читает метаданные AutoCAD без выполнения его кода; им проверены факты приложения А ТЗ.
