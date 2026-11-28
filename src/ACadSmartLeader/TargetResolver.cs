@@ -16,13 +16,18 @@ internal sealed class TargetResolver
     private readonly Transaction tr;
     private readonly Database db;
     private readonly SchemaSnapshot schema;
+    private readonly AutoCadDataReader reader;
     private readonly Dictionary<ObjectId, EntityDataSnapshot> snapshots = new Dictionary<ObjectId, EntityDataSnapshot>();
     private readonly Dictionary<ObjectId, ObjectValues> values = new Dictionary<ObjectId, ObjectValues>();
     private readonly Dictionary<ObjectId, ObjectId[]> spaces = new Dictionary<ObjectId, ObjectId[]>();
-    public TargetResolver(Transaction tr, Database db, SchemaSnapshot schema) { this.tr = tr; this.db = db; this.schema = schema; }
+    public TargetResolver(Transaction tr, Database db, SchemaSnapshot schema)
+    {
+        this.tr = tr; this.db = db; this.schema = schema;
+        reader = new AutoCadDataReader(tr);
+    }
     public EntityDataSnapshot Snapshot(Entity target)
     {
-        if (!snapshots.TryGetValue(target.ObjectId, out var snapshot)) snapshots.Add(target.ObjectId, snapshot = AutoCadDataReader.ReadEntity(tr, target));
+        if (!snapshots.TryGetValue(target.ObjectId, out var snapshot)) snapshots.Add(target.ObjectId, snapshot = reader.ReadEntity(target));
         return snapshot;
     }
     public ObjectValues Values(Entity target)
