@@ -139,6 +139,7 @@ public sealed class Commands
     public void Rules() => Execute(document => {
         using var tr = document.Database.TransactionManager.StartTransaction();
         var rules = NodLabelStore.Read(tr, document.Database, out _); var schema = Plugin.For(document).Schema.Get();
+        var reader = new AutoCadDataReader(tr);
         EntityDataSnapshot? preview = null;
         while (true)
         {
@@ -148,7 +149,7 @@ public sealed class Commands
             if (saved) { NodLabelStore.Write(tr, document.Database, rules); tr.Commit(); return; }
             if (!window.PickTarget) return;
             var target = PickTarget(document, tr, document.Database.CurrentSpaceId, false);
-            if (target != null) preview = AutoCadDataReader.ReadEntity(tr, target);
+            if (target != null) preview = reader.ReadEntity(target);
         }
     });
 

@@ -1,4 +1,4 @@
-Palette Core source (pinned submodule v0.0.143):
+Palette Core source (pinned submodule v0.0.163):
 https://github.com/veb86/acadPaletteSetXDATA
 Its license is reproduced below.
 

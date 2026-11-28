@@ -55,6 +55,52 @@ public sealed class CoreTests
         Assert.Equal(LeaderState.Bound, plan.Data.State);
     }
 
+    [Theory]
+    [InlineData("@@[PART_CODE]", false)]
+    [InlineData("@@[\"PART_CODE\"]", true)]
+    public void UpdateRecalculatesBlockTextFromFreshXDataAndAttributes(string reference, bool persist)
+    {
+        var schema = Schema();
+        var parameter = schema.Schema!.FindParameter("GC_Name")!;
+        parameter.Format = "='П' & @@[GC_HDGroup] & ':' & " + reference;
+        parameter.Persist = persist;
+        var rule = new LabelRule { Id = "R", Top = "@@[GC_HDGroup]" + reference, Bottom = "@@[GC_Name]", Empty = "—" };
+        var evaluator = new LabelEvaluator(schema, new[] { rule }, Ru);
+        var initial = Target("MOTOR", ("GC_HDGroup", ""), ("GC_Name", "Старое значение"));
+
+        EntityDataSnapshot WithAttribute(EntityDataSnapshot target, string code) => new(target.Handle, target.EntityType, target.XData,
+            target.Records, entityProperties: new EntityProperties(new[] { KeyValuePair.Create("PART_CODE", code) }));
+
+        var before = evaluator.Evaluate(WithAttribute(initial, "A-17"), rule);
+        var data = new LeaderData { Target = initial.Handle, Text = LeaderData.TextStamp(before.MText) };
+
+        var attributeEdited = WithAttribute(initial, "A-18");
+        var updatedAttribute = new LeaderUpdatePlan(data, before.MText, initial.Handle, null, evaluator.Evaluate(attributeEdited, rule));
+        Assert.Equal("A-18\\PП:A-18", updatedAttribute.Text);
+        Assert.Equal("A-17\\PП:A-17", before.MText);
+
+        var paletteEdited = new XDataPatch(schema, culture: Ru).Apply(attributeEdited, SelectionEdit.SetParameter("GC_HDGroup", "42"));
+        Assert.Equal(persist ? "П42:A-18" : "Старое значение", XDataV2.Read(paletteEdited, schema).Find("GC_Name")!.Value);
+        var result = evaluator.Evaluate(paletteEdited, rule);
+        var updated = new LeaderUpdatePlan(updatedAttribute.Data, updatedAttribute.Text, initial.Handle, null, result);
+        Assert.Equal("42A-18\\PП42:A-18", updated.Text);
+        Assert.Equal(LeaderState.Bound, updated.Data.State);
+        Assert.False(new LeaderUpdatePlan(updated.Data, updated.Text, initial.Handle, null, result).Changed);
+    }
+
+    [Fact]
+    public void ShelfFallbackUsesEntityMeasurementsAlongsideOptionalXData()
+    {
+        var rule = new LabelRule { Id = "R", Top = "@@[Device_Number]@@[geomLength:geom] м", Empty = "—" };
+        var evaluator = new LabelEvaluator(Schema(), new[] { rule }, Ru);
+        var target = Target("CABLE");
+        Assert.Equal("—", evaluator.Evaluate(target, rule).Top);
+
+        var measured = new EntityDataSnapshot(target.Handle, target.EntityType, target.XData, target.Records,
+            entityProperties: new EntityProperties(length: 3.5));
+        Assert.Equal("3,5 м", evaluator.Evaluate(measured, rule).Top);
+    }
+
     [Fact]
     public void ErrorsEmptyDefaultsAndEscapingAreExplicit()
     {
