@@ -30,6 +30,32 @@ public sealed class CoreTests
     }
 
     [Fact]
+    public void UpdateUsesChangedCalculatedStringEvenWhenItsOptionalInputIsBlank()
+    {
+        var target = Target("MOTOR", ("Device_Number", "М1"), ("GC_HDGroup", ""));
+        var rule = new LabelRule { Id = "R", Top = "@@[Device_Number]", Bottom = "@@[GC_Name]", Empty = "—" };
+
+        LabelText Evaluate(string group)
+        {
+            var schema = Schema();
+            schema.Schema!.FindParameter("GC_Name")!.Format = "='" + group + "' & @@[GC_HDGroup]";
+            var evaluator = new LabelEvaluator(schema, new[] { rule }, Ru);
+            var calculation = evaluator.Calculate(target);
+            Assert.Equal(group, calculation.Text("GC_Name"));
+            return evaluator.Evaluate(calculation, rule);
+        }
+
+        var before = Evaluate("ЩУ1");
+        var stored = new LeaderData { Target = target.Handle, Text = LeaderData.TextStamp(before.MText) };
+        var plan = new LeaderUpdatePlan(stored, before.MText, target.Handle, null, Evaluate("ЩУ2"));
+
+        Assert.Equal("М1\\PЩУ2", plan.Text);
+        Assert.Equal("М1\\PЩУ1", before.MText);
+        Assert.True(plan.Changed);
+        Assert.Equal(LeaderState.Bound, plan.Data.State);
+    }
+
+    [Fact]
     public void ErrorsEmptyDefaultsAndEscapingAreExplicit()
     {
         var rule = new LabelRule { Id = "BROKEN", Top = "@@[Unknown_Id]", Bottom = "@@[Cable_Mark", Empty = "—" };

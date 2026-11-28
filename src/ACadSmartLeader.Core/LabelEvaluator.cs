@@ -66,20 +66,12 @@ public sealed class LabelEvaluator
             if (!ids.TryGetValue(format, out var id)) throw new InvalidOperationException("Формат не включён в снимок вычисления.");
             var result = calculation.Find(id)!;
             if (result.IsError) { errors.Add(result.Error ?? "Ошибка формата."); return rule.Error; }
-            if (result.Formula.References.Count > 0 && result.Formula.References.All(reference => Empty(reference, new HashSet<string>(StringComparer.OrdinalIgnoreCase)))) return rule.Empty;
+            if (result.Formula.References.Count > 0 && result.Formula.References.All(reference => IsEmpty(calculation.Value(reference)))) return rule.Empty;
             return result.Text;
         }
-
-        bool Empty(string id, HashSet<string> visited)
-        {
-            if (!visited.Add(id)) return false;
-            var formula = calculation.Formulas.Find(id);
-            if (formula != null && formula.References.Count > 0)
-                return formula.References.All(reference => Empty(reference, new HashSet<string>(visited, StringComparer.OrdinalIgnoreCase)));
-            var value = calculation.Value(id);
-            return value is null || value is string s && s.Length == 0;
-        }
     }
+
+    private static bool IsEmpty(object? value) => value is null || value is string { Length: 0 };
 
     public IReadOnlyList<string> Diagnostics => Schema.Formulas.Diagnostics;
 }
