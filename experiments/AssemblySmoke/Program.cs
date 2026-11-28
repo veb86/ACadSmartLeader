@@ -24,6 +24,7 @@ Type Type(string name) => assembly.GetType(name, throwOnError: true)!;
 object Make(string name, params object?[] values) => Activator.CreateInstance(Type(name), values)!;
 Array Empty(string name) => Array.CreateInstance(Type(name), 0);
 dynamic schemaResult = Type(palette + "ParameterSchemaJson").GetMethod("LoadFile")!.Invoke(null, new object?[] { args[1], null })!;
+schemaResult.Schema.FindParameter("GC_Name").Format = "@@[GC_HeadDevice].@@[PART_CODE]";
 dynamic snapshot = Make(palette + "SchemaSnapshot", Make(palette + "SchemaNodReadResult", (object)schemaResult.Schema, null, Empty(palette + "SchemaIssue")));
 var parseArgs = new object?[] { File.ReadAllText(args[2]), null };
 dynamic rules = Type(leader + "LabelRules").GetMethod("Parse")!.Invoke(null, parseArgs)!;
@@ -31,8 +32,15 @@ var pairs = new (int Code, object Value)[] { (1001, "BobrovXDATA"), (1070, (shor
     (1000, "Power"), (1040, 7.5), (1000, "Current"), (1040, 15.2), (1000, "GC_HeadDevice"), (1000, "ЩУ1"), (1000, "GC_HDGroup"), (1000, "3") };
 var values = Array.CreateInstance(Type(palette + "DataValue"), pairs.Length);
 for (var i = 0; i < pairs.Length; i++) values.SetValue(Make(palette + "DataValue", pairs[i].Code, pairs[i].Value), i);
-dynamic target = Make(palette + "EntityDataSnapshot", "1F", "BlockReference", values, Empty(palette + "DataRecord"), null, null);
+dynamic Target(string code)
+{
+    var properties = Make(palette + "EntityProperties", new[] { new KeyValuePair<string, string>("PART_CODE", code) }, null, null);
+    return Make(palette + "EntityDataSnapshot", "1F", "BlockReference", values, Empty(palette + "DataRecord"), null, null, properties);
+}
 dynamic evaluator = Make(leader + "LabelEvaluator", (object)snapshot, (object)rules.Rules, CultureInfo.GetCultureInfo("ru-RU"), null);
-dynamic text = evaluator.Evaluate(target, rules.Rules[1]); // MOTOR_FULL exercises NCalc formula mode.
+dynamic text = evaluator.Evaluate(Target("A-17"), rules.Rules[1]); // MOTOR_FULL exercises NCalc formula mode.
 if (text.Bottom != "7,50 кВт, 15,2 А" || text.Errors.Count != 0) throw new InvalidOperationException("Embedded formula failed: " + text.Bottom);
-Console.WriteLine("ASSEMBLY_SMOKE_OK: " + Path.GetFileName(args[0]) + "; API=" + api + "; " + text.Bottom + "; embedded assemblies=" + resources.Length);
+dynamic updated = evaluator.Evaluate(Target("A-18"), rules.Rules[1]);
+if (text.Top != "ЩУ1.A-17" || updated.Top != "ЩУ1.A-18" || updated.Errors.Count != 0)
+    throw new InvalidOperationException("Embedded block formula failed: " + text.Top + " → " + updated.Top);
+Console.WriteLine("ASSEMBLY_SMOKE_OK: " + Path.GetFileName(args[0]) + "; API=" + api + "; " + updated.Top + "; " + text.Bottom + "; embedded assemblies=" + resources.Length);
